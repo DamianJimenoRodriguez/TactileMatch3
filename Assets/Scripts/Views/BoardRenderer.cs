@@ -1,5 +1,9 @@
-﻿using Tactile.TactileMatch3Challenge.Model;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Tactile.TactileMatch3Challenge.Model;
 using UnityEngine;
+using Unity.Collections;
+using System.Collections;
 
 namespace Tactile.TactileMatch3Challenge.ViewComponents {
 
@@ -9,12 +13,18 @@ namespace Tactile.TactileMatch3Challenge.ViewComponents {
 		[SerializeField] private VisualPiece visualPiecePrefab;
 		
 		private Board board;
-		
+
+		private VisualPiece[,] VisualPieces;
+
+		public bool CanClick = true;
+
+
 		public void Initialize(Board board) {
 			this.board = board;
-
+			VisualPieces = new VisualPiece[board.Width, board.Height];
 			CenterCamera();
 			CreateVisualPiecesFromBoardState();
+			board.OnRemovePiece += RemovePieceAt;
 		}
 
 		private void CenterCamera() {
@@ -22,13 +32,13 @@ namespace Tactile.TactileMatch3Challenge.ViewComponents {
 		}
 
 		private void CreateVisualPiecesFromBoardState() {
-			DestroyVisualPieces();
+		
 
 			foreach (var pieceInfo in board.IteratePieces()) {
 				
 				var visualPiece = CreateVisualPiece(pieceInfo.piece);
 				visualPiece.transform.localPosition = LogicPosToVisualPos(pieceInfo.pos.x, pieceInfo.pos.y);
-
+				VisualPieces[pieceInfo.pos.x, pieceInfo.pos.y] = visualPiece;
 			}
 		}
 		
@@ -63,21 +73,78 @@ namespace Tactile.TactileMatch3Challenge.ViewComponents {
 			}
 		}
 
+		private void HandleChanges(Dictionary<Piece, ChangeInfo> changes)
+		{
+			for (int index = 0; index < changes.Count; index++)
+			{
+				var item = changes.ElementAt(index);
+				VisualPiece visualPiece = null;
+				Vector3 to = LogicPosToVisualPos(item.Value.ToPos.x, item.Value.ToPos.y);
+				Vector3 from = LogicPosToVisualPos(item.Value.FromPos.x, item.Value.FromPos.y);
+
+				if (item.Value.WasCreated)
+                {
+					visualPiece = CreateVisualPiece(item.Key);
+					VisualPieces[item.Value.ToPos.x, item.Value.ToPos.y] = visualPiece;
+					StartCoroutine(MovePieces(visualPiece, from, to, 2, 2));
+				}
+                else
+                {
+					visualPiece = VisualPieces[item.Value.FromPos.x, item.Value.FromPos.y];
+					VisualPieces[item.Value.ToPos.x, item.Value.ToPos.y] = visualPiece;	
+				StartCoroutine(MovePieces(visualPiece, from, to,2,0));
+				}
+                
+			}
+		}
+
+		public IEnumerator MovePieces(VisualPiece piece, Vector3 From, Vector3 To, float LerpTime, float waitTime)
+        {
+			yield return new WaitForSeconds(waitTime);
+			float elapsedTime = 0;
+            while (elapsedTime< LerpTime)
+            {
+				elapsedTime += Time.deltaTime;
+				yield return null;
+				piece.transform.localPosition = Vector3.Lerp(From, To, elapsedTime / LerpTime);
+
+			}
+        }
+		public IEnumerator CoolDown()
+		{
+			CanClick = false;
+			yield return new WaitForSeconds(2);
+			CanClick = true;
+		}
+
+		public void RemovePieceAt(int x, int y)
+		{
+            if (VisualPieces[x,y] != null)
+            {
+				Destroy(VisualPieces[x, y].gameObject);
+			}
+		}
+
+
 		private void Update() {
 			
-			if (Input.GetMouseButtonDown(0)) {
+			if (Input.GetMouseButtonDown(0) && CanClick) {
 
 				var pos = ScreenPosToLogicPos(Input.mousePosition.x, Input.mousePosition.y);
 
 				if (board.IsWithinBounds(pos.x, pos.y)) {
-					board.Resolve(pos.x, pos.y);
-					CreateVisualPiecesFromBoardState();
-
+					ResolveResult result = board.Resolve(pos.x, pos.y);
+					HandleChanges(result.changes);
+					StartCoroutine(CoolDown());
 				}
 
 			}
 		}
 		
 	}
+
+
+
+
 
 }

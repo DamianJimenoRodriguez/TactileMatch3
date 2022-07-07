@@ -6,7 +6,7 @@ namespace Tactile.TactileMatch3Challenge.Model {
         
         private Piece[,] boardState;
         private readonly IPieceSpawner pieceSpawner;
-
+        public System.Action<int,int> OnRemovePiece;
         public static Board Create(int[,] definition, IPieceSpawner pieceSpawner) {
             return new Board(definition, pieceSpawner);
         }
@@ -96,6 +96,10 @@ namespace Tactile.TactileMatch3Challenge.Model {
         } 
         
         public void RemovePieceAt(int x, int y) {
+            if (OnRemovePiece != null)
+            {
+                OnRemovePiece(x,y);
+            }
             boardState[x, y] = null;
         }
         
