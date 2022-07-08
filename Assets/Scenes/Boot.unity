@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.37311953, g: 0.38074014, b: 0.3587274, a: 1}
+  m_IndirectSpecularColor: {r: 0.37311918, g: 0.3807398, b: 0.35872716, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -572,15 +572,15 @@ MonoBehaviour:
     type: 3}
   visualPiecePrefab: {fileID: 114334551203518046, guid: 7503254cc2e4e4ef4981b5f8aedfe466,
     type: 3}
-  CanClick: 1
   ScoreBoardPositions:
   - {fileID: 2140459848}
   - {fileID: 463297272}
   - {fileID: 1145442256}
   - {fileID: 981107901}
   - {fileID: 802322086}
-  fallInterval: 0.1
-  speed: 20
+  FallSpeed: 40
+  ResolveSpeed: 15
+  CreationTime: 0.1
 --- !u!4 &1201935909
 Transform:
   m_ObjectHideFlags: 0
