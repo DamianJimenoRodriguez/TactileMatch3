@@ -7,6 +7,7 @@ namespace Tactile.TactileMatch3Challenge.Model
         private Piece[,] boardState;
         private readonly IPieceSpawner pieceSpawner;
         public System.Action<int, int, int> OnRemovePiece;
+        public System.Action<int, int, int> OnCreatePowerPiece;
 
         public static Board Create(int[,] definition, IPieceSpawner pieceSpawner)
         {
@@ -196,11 +197,47 @@ namespace Tactile.TactileMatch3Challenge.Model
 
         public void FindAndRemoveConnectedAt(int x, int y)
         {
-            var connections = GetConnected(x, y);
-            if (connections.Count > 1)
+           
+
+            switch (GetAt(x,y).type)
             {
-                RemovePieces(connections);
+                case 5:
+                    List<Piece> Row = new List<Piece>();
+                    for (int i = 0; i < Width; i++)
+                    {
+                        Row.Add(GetAt(i, y));
+                    }
+                    RemovePieces(Row);
+
+                    break;
+                case 6:
+                    List<Piece> column = new List<Piece>();
+                    for (int i = 0; i < Width; i++)
+                    {
+                        column.Add(GetAt(x, i));
+                    }
+                    RemovePieces(column);
+                    break;
+                default:
+                    var connections = GetConnected(x, y);
+                    if (connections.Count > 1)
+                    {
+                        if (connections.Count > 3)
+                        {
+                            int rand = UnityEngine.Random.Range(5, 7);
+                            CreatePiece(rand, x, y);
+                            if (OnCreatePowerPiece != null)
+                            {
+                                OnCreatePowerPiece(rand, x, y);
+                            }
+                        }
+                        RemovePieces(connections);
+                    }
+                    break;
             }
+
+
+  
         }
 
         public ResolveResult MoveAndCreatePiecesUntilFull()

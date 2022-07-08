@@ -578,6 +578,8 @@ MonoBehaviour:
   - {fileID: 1145442256}
   - {fileID: 981107901}
   - {fileID: 802322086}
+  - {fileID: 802322086}
+  - {fileID: 802322086}
   FallSpeed: 40
   ResolveSpeed: 15
   CreationTime: 0.1

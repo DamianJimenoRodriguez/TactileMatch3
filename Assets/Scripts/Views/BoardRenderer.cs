@@ -29,6 +29,7 @@ namespace Tactile.TactileMatch3Challenge.ViewComponents
             CenterCamera();
             CreateVisualPiecesFromBoardState();
             board.OnRemovePiece += RemovePieceAt;
+            board.OnCreatePowerPiece += CreatePowerPiece;
         }
 
         private void CenterCamera()
@@ -70,6 +71,14 @@ namespace Tactile.TactileMatch3Challenge.ViewComponents
             pieceObject.SetSprite(sprite);
             return pieceObject;
         }
+
+        public void CreatePowerPiece(int type, int x ,int y)
+        {
+
+            var sprite = pieceTypeDatabase.GetSpriteForPieceType(type);
+            VisualPieces[x, y].SetSprite(sprite);
+        }
+
 
         private void DestroyVisualPieces()
         {
