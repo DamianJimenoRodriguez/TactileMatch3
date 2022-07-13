@@ -22,6 +22,10 @@ namespace Tactile.TactileMatch3Challenge.ViewComponents
         [SerializeField] private float FallSpeed = 25;
         [SerializeField] private float ResolveSpeed = 15;
         [SerializeField] private float CreationTime = 15;
+
+        public System.Action<int> OnScore;
+        public System.Action OnTurnFinish;
+
         public void Initialize(Board board)
         {
             this.board = board;
@@ -72,13 +76,11 @@ namespace Tactile.TactileMatch3Challenge.ViewComponents
             return pieceObject;
         }
 
-        public void CreatePowerPiece(int type, int x ,int y)
+        public void CreatePowerPiece(int type, int x, int y)
         {
-
             var sprite = pieceTypeDatabase.GetSpriteForPieceType(type);
             VisualPieces[x, y].SetSprite(sprite);
         }
-
 
         private void DestroyVisualPieces()
         {
@@ -88,32 +90,38 @@ namespace Tactile.TactileMatch3Challenge.ViewComponents
             }
         }
 
-
         private IEnumerator HandleChanges(Dictionary<Piece, ChangeInfo> changes)
         {
-            CanClick = false;
-            for (int index = 0; index < changes.Count; index++)
+            if (changes.Count > 0)
             {
-                var item = changes.ElementAt(index);
-                VisualPiece visualPiece = null;
-                Vector3 to = LogicPosToVisualPos(item.Value.ToPos.x, item.Value.ToPos.y);
-                Vector3 from = LogicPosToVisualPos(item.Value.FromPos.x, item.Value.FromPos.y);
-                if (!item.Value.WasCreated)
+                CanClick = false;
+                for (int index = 0; index < changes.Count; index++)
                 {
-                    visualPiece = VisualPieces[item.Value.FromPos.x, item.Value.FromPos.y];
-                    yield return StartCoroutine(MovePieces(visualPiece, from, to,FallSpeed));
+                    var item = changes.ElementAt(index);
+                    VisualPiece visualPiece = null;
+                    Vector3 to = LogicPosToVisualPos(item.Value.ToPos.x, item.Value.ToPos.y);
+                    Vector3 from = LogicPosToVisualPos(item.Value.FromPos.x, item.Value.FromPos.y);
+                    if (!item.Value.WasCreated)
+                    {
+                        visualPiece = VisualPieces[item.Value.FromPos.x, item.Value.FromPos.y];
+                        yield return StartCoroutine(MovePieces(visualPiece, from, to, FallSpeed));
+                    }
+                    else
+                    {
+                        visualPiece = CreateVisualPiece(item.Key);
+                        from.y += 2;
+                        visualPiece.transform.localPosition = from;
+                        StartCoroutine(CretatePieceAnimation(visualPiece.transform, Vector3.zero, Vector3.one, CreationTime));
+                        yield return StartCoroutine(MovePieces(visualPiece, from, to, FallSpeed));
+                    }
+                    VisualPieces[item.Value.ToPos.x, item.Value.ToPos.y] = visualPiece;
                 }
-                else 
+                CanClick = true;
+                if (OnTurnFinish != null)
                 {
-                    visualPiece = CreateVisualPiece(item.Key);
-                    from.y += 2;
-                    visualPiece.transform.localPosition = from;
-                    StartCoroutine(CretatePieceAnimation(visualPiece.transform, Vector3.zero, Vector3.one, CreationTime));
-                    yield return StartCoroutine(MovePieces(visualPiece, from, to,FallSpeed));
+                    OnTurnFinish();
                 }
-                VisualPieces[item.Value.ToPos.x, item.Value.ToPos.y] = visualPiece;
             }
-            CanClick = true;
         }
 
         public IEnumerator CretatePieceAnimation(Transform transform, Vector3 Initial, Vector3 Final, float CreateTime)
@@ -127,7 +135,6 @@ namespace Tactile.TactileMatch3Challenge.ViewComponents
                 yield return null;
             }
         }
-
 
         public IEnumerator MovePieces(VisualPiece piece, Vector3 From, Vector3 To, float speed)
         {
@@ -152,8 +159,23 @@ namespace Tactile.TactileMatch3Challenge.ViewComponents
         {
             VisualPiece piece = VisualPieces[x, y];
             piece.GetComponent<SpriteRenderer>().sortingOrder = 32767;
-            yield return StartCoroutine(MovePieces(piece, LogicPosToVisualPos(x, y), ScoreBoardPositions[type].position,ResolveSpeed));
-            Destroy(piece.gameObject);
+            switch (type)
+            {
+                case 5:
+                case 6:
+                    Destroy(piece.gameObject);
+                    break;
+
+                default:
+                    yield return StartCoroutine(MovePieces(piece, LogicPosToVisualPos(x, y), ScoreBoardPositions[type].position, ResolveSpeed));
+
+                    if (OnScore != null)
+                    {
+                        OnScore(type);
+                    }
+                    Destroy(piece.gameObject);
+                    break;
+            }
         }
 
         private void Update()
@@ -168,7 +190,6 @@ namespace Tactile.TactileMatch3Challenge.ViewComponents
                     StartCoroutine(HandleChanges(result.changes));
                 }
             }
-         
         }
     }
 }
